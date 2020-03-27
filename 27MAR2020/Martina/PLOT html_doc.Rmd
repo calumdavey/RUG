@@ -1,0 +1,242 @@
+---
+title: "PLOTS"
+output: 
+  html_document:
+    code_folding: show
+    toc: TRUE
+    toc_float: 
+      collapsed: TRUE
+---
+### Overview 
+
+- **Study design:** Analytical, prospective dynamic cohort study.  
+- **Setting:** The data was obtained from a pragmatic, multicentre, individually randomized clinical trial.  
+- **Study population:** Adults (>18years), HIV-positive patients with no evidence of tuberculosis co-infection, admitted to medical wards at Zomba Central or Edendale Hospital between February 2015 and January 2018, and who provided consent to participate in the parent study.  
+- **Aim: ** To assess whether ART-status, as indicator of (in)appropriate HIV treatment accessibility and management, is leading to higher death rates in hospitalised patients (with no evidence of tuberculosis co-infection) in two main referral hospitals in Malawi and South Africa.  
+  
+- **Outcome:** All-cause 56-day (8-week) mortality.  
+- **Main exposure:** ‘ART-status’. A composite variable with three categories, based on ART at admission (yes/no) and CD4 level at admission (low/high) if patient is under ART  
+ + **(1) ART-High CD4** HIV-patients who have started ART and have a high count of CD4 at admission
+ + **(2) ART-Low CD4** HIV-patients who have started ART and have a low count of CD4 at admission
+ + **(3) No ART** HIV-patients who have not started ART prior admission  
+
+### Dependencies & global settings
+
+```{r message=FALSE, warning=FALSE}
+# Packages needed
+library(tidyverse)
+library(gridExtra) 
+library(knitr)
+library(survminer)
+library(survival)
+library(ggthemes)
+
+# Global settings 
+knitr::opts_chunk$set(echo = TRUE)
+options(width = 100)
+
+```
+
+### Upload / Prepare data
+
+```{r} 
+hiv <- read.csv(file="~/hiv/hiv07sep.csv", header = TRUE, sep = ",")
+  
+hiv$cd4count   <-as.numeric(hiv$cd4count)
+hiv$art3       <-as.factor(hiv$art3)
+hiv$art2       <-as.factor(hiv$art2)
+hiv$art1       <-as.factor(hiv$art1)
+hiv$hivdx00    <-as.numeric(hiv$hivdx00)
+hiv$age        <-as.numeric(hiv$age)
+hiv$artyears2  <-as.numeric(hiv$artyears2)
+hiv$hiv_art_c2 <-as.factor(hiv$hiv_art_c2)
+  
+# change the labels for fupreason
+levels(hiv$fupreason)
+# Initially used plyr::revalue because I incorrecly imported this as a factor
+# I want to correct this now so I can use dplyr only 
+# So, I collaps two levels first and then recode the rest. 
+hiv$fupreason2 <- fct_collapse(hiv$fupreason, Censored = c("2.withdrew","3.lost_fup"))
+levels(hiv$fupreason2)
+hiv$fupreason2 <- fct_recode(hiv$fupreason2, Outcome = "1.death", Complete = "4.complete")
+# checking relabeling worked
+table(hiv$fupreason, hiv$fupreason2, useNA = "always")
+```
+
+### Plots settings
+ 
+```{r}
+fill <- "slategray"
+line <- "#1F3552"
+cate <- c("1.ART/highCD4" = "steelblue4",
+          "2.ART/lowCD4" = "skyblue3",
+          "3.noART" = "Grey60")
+  
+t <-theme(panel.background   = element_rect(fill = "white", colour = "grey"),
+          panel.grid.minor.y = element_blank(),
+          panel.grid.major.y = element_line(colour = "grey", size = 0.15),
+          
+          axis.ticks.x = element_blank(),
+          axis.ticks.y = element_blank(),
+          
+          axis.text.x = element_text(colour = "grey27", size = 9),
+          axis.title.y = element_text(colour = "grey27", size = 10),
+          
+          plot.margin = unit(c(1, 3, 1, 3), "cm"),
+          plot.background = element_rect(colour = "black", fill = "grey90", size = 0.1))
+```
+ 
+### Box plot 1 - Basic
+
+Time LHIV (years) over exposure
+ 
+```{r}
+ggplot(data    = hiv, 
+       mapping = aes(x = artstatus1, y = hivdxyears)) +
+  # add the wiskers
+  stat_boxplot(geom ='errorbar', width = 0.5, colour = line) +
+  # add this layer at the end so it shows over the error bar line
+  geom_boxplot(fill = fill, colour = line, width = 0.5,
+               outlier.colour = line, outlier.shape = 16) +
+  # labels for the axes and axes labels
+  scale_x_discrete(name = " ", labels = c('ART/highCD4\n(N=812)',
+                                          'ART/lowCD4\n(N=682)', 
+                                          'No-ART\n(N=544)')) +
+  scale_y_continuous(name = "Years LHIV", breaks = seq(0, 28, 2)) +
+  # add the theme
+  t
+```
+ 
+### Box plot 2 - Adding elements
+
+CD4 count (cells/ml) by time of HIV diagnosis amongst no-ART
+ 
+```{r}
+ggplot(data    = subset(hiv, !is.na(art3)), 
+       mapping = aes(x = art3, y = cd4count))  +
+  # add the wiskers
+  stat_boxplot(geom ='errorbar', width = 0.3, colour = line) +
+  # add the line used to dicotomise main exposure
+  geom_hline(yintercept = 264, linetype = "dotted", color = "tomato4", size = 0.5) +
+  # add this layer at the end so it shows over the dotted line
+  geom_boxplot(fill = fill, colour = line, width = 0.3,
+               outlier.colour = line, outlier.shape = 20) +
+  # labels for the axes and axes labels
+  scale_x_discrete(name = " ", labels = c('Diagnosis \nbefore admission \n(N=226)',
+                                          'Diagnosis \nat admission \n(N=322)')) +
+  scale_y_continuous(name = "CD4 cells/ml", breaks = seq(0, 1800, 250)) +
+  # additional text for the label
+  annotate("text", x = 2.4, y = 269, label = "264\ncells/ml", size = 3 ) +
+  # add the theme
+  t
+# save the plot
+ggsave("cd4.png", width = 15, height = 10, units = "cm")
+```
+ 
+### Scatterplot 1 - Overide global
+
+Time LHIV on time on ART. 
+
+
+ 
+```{r}
+ggplot(data    = hiv,
+       mapping = aes(x = hivdxyears, y = artyears2, colour = factor(artstatus1))) +
+  geom_point()  +
+  # use the colors defined in "settings" and define new labels for the strata
+  scale_colour_manual(values = cate,
+                      breaks = c("1.ART/highCD4",
+                                 "2.ART/lowCD4",
+                                 "3.noART"),
+                      labels = c("ART/highCD4 (N=788)", 
+                                 "ART/lowCD4 (N=671)",
+                                 "No-ART (n=218)")) +
+  # labels and breaks for the axes
+  scale_x_continuous(name = "Years LHIV",
+                     breaks = seq(0, 30, 5)) + 
+  scale_y_continuous(name = "Years on ART", 
+                     breaks = seq(0, 30, 5)) +
+  ## same scale for both axes
+  coord_equal() +
+  # using the same theme but overiding some parameters and adding others
+  # note I have to use axis.tilte instead of axis.text to override
+  t +
+  theme(axis.title.x = element_text(colour = "Grey27", size = 10),
+        
+        legend.key = element_blank(),
+        legend.title = element_blank(),
+        legend.position = c(0.02, 0.97), 
+        legend.justification = c(0, 1),
+        legend.text = element_text(size = 8),
+        
+        plot.margin = unit(c(1.2, 1.2, 1, 1), "cm")
+)
+```
+ 
+### Scatterplot 2 - Faceting
+
+Follow-up time by main exposure and censoring
+  
+```{r}
+# savign and object withthe labels for the graph
+fupreason2.labs <- c('Outcome'  = "Outcome (N=311)",
+                     'Censored' = "Censored <56d (N=38)",
+                     'Complete' = "Complete (n=1712)")
+
+ggplot(data = hiv,
+       mapping = aes(x= artstatus1, y=fuptime2)) +
+  geom_dotplot(binaxis = "y", stackdir = "center",
+               stackratio = 1.5, dotsize = 0.5,
+               colour = line) +
+  # faceting
+  facet_wrap(~ fupreason2, 
+             ncol = 3,
+             labeller = labeller(fupreason2 = fupreason2.labs))  +
+  # labels and breaks for the axes
+  scale_x_discrete(name = " ", labels = c('ART\nhighCD4',
+                                          'ART\nlowCD4', 
+                                          'No\nART'))  +
+  scale_y_continuous(name   = "Follow-up time (days)",
+                     breaks = seq(0, 70, 15)) + 
+  # using the same theme but overiding some parameters and adding others
+  # again using axis.title instead of axis.text to override
+  t +
+  theme(panel.grid.major.x = element_line(colour = "grey", size = 0.15),
+        axis.title.x = element_text(colour = "Grey27", size = 8),
+        plot.margin = unit(c(1, 1, 1, 1), "cm"))
+```
+  
+### Survival curve
+ 
+```{r}
+# survival::survfit --> creates the survfit object needed for ggsurvplot 
+fit1 <-survfit(Surv(fuptime2, died) ~ artstatus1,
+               data = hiv)
+
+# survminer::ggsurvplot creates the plot
+ggsurvplot(fit1, 
+           censor.shape = "|", censor.size = 4,
+           size = 0.5,
+           palette =  c("steelblue4","skyblue3","Grey60"), 
+           conf.int = TRUE,
+           
+           risk.table = TRUE,
+           risk.table.y.text = FALSE,
+           risk.table.height = 0.3, # this is the proportion of hight it takes
+           risk.table.fontsize = 4,
+           
+           legend.title = " ",
+           legend.labs = c('ART/highCD4', 'ART/lowCD4', 'No-ART'),
+           legend = "top",
+           
+           ylim = c(0.67, 1.00),
+           xlim = c(0,56),
+           break.time.by = 7,
+           xlab = "Time in days",
+           ggtheme = theme_igray()
+           )
+
+
+```
+ 
+ 
