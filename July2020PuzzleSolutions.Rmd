@@ -139,9 +139,9 @@ puzzle<-function(df){
 }
 ```
 
-## Alexandra 
+## Alex 
 
-```{r Alexandra}
+```{r Alex}
 puzzlefunction <- function(data,threshold=0.05){
   index <- sum(1-sign(cumsum(data$limit >= 0.05)))  
   return(data$x[index])
@@ -171,14 +171,14 @@ alpha <- threshold <- 0.05
   # Clemence 
     puzzle(data),
   
-  # Alexandra 
+  # Alex 
     puzzlefunction(data, threshold),
   
   times = 1000
 ) 
   
 barplot(summary(m)$median,
-        names = c( 'Calum', 'Antonio', 'Darren', 'Clemence', 'Alexandra'),
+        names = c( 'Calum', 'Antonio', 'Darren', 'Clemence', 'Alex'),
         ylab = 'Median time in ns')  
 
 ```
