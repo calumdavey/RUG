@@ -12,6 +12,8 @@ I only needed the first 5 character/factor columns and the last 4 numerical ones
 
 ## Jocelyn's problem: reading excel spreadsheets efficiently into R: complicated example
  
+See the Excel workbook above
+ 
 What makes it complicated is:
 
 1. Sheets within a workbook
