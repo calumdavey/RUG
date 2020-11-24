@@ -1,0 +1,17 @@
+old.name,new.name
+x15_19,age_15_19
+x20_29,age_20_29
+x30_39,age_30_39
+x40_49,age_40_49
+x50_59,age_50_59
+x60_69,age_60_69
+female,sex_f
+male,sex_m
+transgender_non_binary,sex_nb
+married_or_living_together,ms_marr
+never_married,ms_never
+other,ms_other
+missing,age_miss
+missing_1,ms_miss
+employed,wk_emp
+student_retired_unemployed,wk_unemp
