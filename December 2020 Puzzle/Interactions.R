@@ -18,11 +18,14 @@
   # Set the model parameters 
   Alpha = 10
   Beta1 = .2
-  Beta3 = 1.3
-  Beta4 = 1.4 
+  Beta2 = 1.3
+  Beta3 = 1.4 
   
   # Generate the dependent variable 
   data2$y = Alpha + Beta1*data2$f + Beta2*data2$x + Beta3*data2$f*data2$x + data2$e
+  
+  # Reclass f as factor
+  data2$f <- as.factor(data2$f)
   
 # Fit the model   
 # =============
@@ -34,15 +37,15 @@
 # ======================  
   
   # (1) Calum + Will + Saravanakumar 
-    confint(multcomp::glht(model, linfct="f + f:x = 1"))
+    confint(multcomp::glht(model, linfct="x + f1:x = 0"))
     
   # (2) Antonio   
     model2 <- lm(y ~ x:f + f)
     Epi::ci.lin(model2)
     
   # (3) Paul, https://stats.idre.ucla.edu/r/seminars/interactions-r/#s4a
-    emmeans::emmeans(model, ~ x*f)
-    emmeans::emmip(model,  x ~  f)
+    emmeans::emtrends(model, ~ f, var = "x")
+    
   
   
   # # plotting this (bar plot)
