@@ -40,25 +40,11 @@
     confint(multcomp::glht(model, linfct="x + f1:x = 0"))
     
   # (2) Antonio   
-    model2 <- lm(y ~ x:f + f)
+    model2 <- lm(y ~ x:f + f, data=data2)
     Epi::ci.lin(model2)
     
   # (3) Paul, https://stats.idre.ucla.edu/r/seminars/interactions-r/#s4a
     emmeans::emtrends(model, ~ f, var = "x")
     
   
-  
-  # # plotting this (bar plot)
-  #   geo_day_dat1 <- as.data.frame(emmeans::emmeans(covid.mod1, ~ mid_day_group*geo_region_factor))
-  # 
-  #   library(ggplot2)
-  #   ggplot(data= geo_day_dat1, aes(x=geo_region_factor,y=emmean, fill=mid_day_group)) +
-  #   geom_bar(stat="identity",position="dodge") +
-  #   geom_errorbar(position=position_dodge(.9),width=.25, aes(ymax=upper.CL, ymin=lower.CL),alpha=0.3) +
-  #   geom_text(aes(label=sprintf("%0.2f", round(emmean, digits = 2))), position=position_dodge(width=0.9), vjust=-0.5,size=3.5) +
-  #   labs(x="Geographic region", y="Rt Mean", fill="Mid day",
-  #        title = "Rt Mean predictions for combinations of Mid day and Region
-  #               \n (Unadjusted plot)") +
-  #   coord_cartesian(ylim = c(0.9, 1.5) )
- 
     
