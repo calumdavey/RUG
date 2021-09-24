@@ -94,3 +94,7 @@ https://dept.stat.lsa.umich.edu/~jerrick/courses/stat701/notes/sql.html SQL in R
 - Xtable (latex) 
 - https://cran.r-project.org/web/packages/tableone/vignettes/introduction.html
 - https://rmarkdown.rstudio.com/
+
+## Version control 
+- Git 
+- here package 
